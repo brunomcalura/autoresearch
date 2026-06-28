@@ -35,6 +35,19 @@ SFT requires pre-packed Parquet data in the following layout:
     valid/    # *.parquet files (optional)
 ```
 
+For a reproducible Portuguese test dataset, stream a subset of
+[`TucanoBR/Tucano-SFT`](https://huggingface.co/datasets/TucanoBR/Tucano-SFT)
+from Hugging Face and convert it to the required packed format:
+
+```bash
+uv run python scripts/download_tucano_sft.py
+```
+
+This processes 10,000 conversations by default and writes them to
+`nemo_experiments/data/stage1_sft_pt`. Use `--max-samples 0` for the complete
+dataset or `--help` to see the tokenizer, sequence-length, cache, and output
+options.
+
 ### 3. Run SFT
 
 ```bash

@@ -50,8 +50,9 @@ results.tsv
 nemo_experiments/
 wandb/
 
-# Scripts
-scripts/
+# Keep local helper scripts ignored, except the reproducible dataset downloader.
+# scripts/*
+# !scripts/download_tucano_sft.py
 
 # Notebooks
 notebooks/
