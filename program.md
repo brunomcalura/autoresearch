@@ -31,7 +31,7 @@ torchrun --nproc-per-node=<N_GPUS> train.py \
     [--seq-length 8192] [--train-iters 512] [--lr 5e-6] ...
 ```
 
-The number of GPUs (`<N_GPUS>`) is a hyperparameter chosen by the user.
+The number of GPUs (`<N_GPUS>`) is chosen **exclusively by the user**. The agent must never change `--nproc-per-node`.
 
 **Iteration budget**: The goal of each run is to **validate code changes**, not to train to convergence. Keep the number of training iterations low — around **512 iterations** is the target. This is enough to confirm that the training loop runs correctly, losses decrease, and there are no crashes or regressions. Do not increase `--train-iters` significantly beyond this unless the user explicitly asks.
 
@@ -41,6 +41,7 @@ The number of GPUs (`<N_GPUS>`) is a hyperparameter chosen by the user.
 - Modify `train.py` -- this is the only file you edit. Everything is fair game: hyperparameters (learning rate, batch size, warmup, decay), optimizer settings, scheduler, context parallelism, sequence length, evaluation intervals, etc.
 
 **What you CANNOT do:**
+- Change the number of GPUs (`--nproc-per-node`). This is set by the user and must not be modified by the agent.
 - Modify `prepare.py`. It is read-only. It contains the fixed path resolution and validation utilities.
 - Install new packages or add dependencies. You can only use what's already in `pyproject.toml`.
 - Change the model architecture (the Nemotron 3 Nano 4B recipe is fixed via `nemotronh_4b_finetune_config()`).
