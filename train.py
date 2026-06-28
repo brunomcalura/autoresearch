@@ -16,13 +16,17 @@ import argparse
 import subprocess
 from pathlib import Path
 
+import torch
+
+from megatron.bridge import AutoBridge
 from megatron.bridge.data.datasets.packed_sequence import PackedSequenceSpecs
-from megatron.bridge.recipes.nemotronh.nemotron_nano_v2 import (
-    nemotronh_4b_finetune_config,
+from megatron.bridge.recipes.nemotronh.nemotronh import (
+    nemotronh_4b_peft_config,
 )
 from megatron.bridge.training.config import FinetuningDatasetConfig
 from megatron.bridge.training.finetune import finetune
 from megatron.bridge.training.gpt_step import forward_step
+from transformers import AutoConfig
 
 from prepare import resolve_packed_paths, validate_config
 
@@ -61,7 +65,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--lr", type=float, default=5e-6)
     parser.add_argument("--min-lr", type=float, default=5e-7)
-    parser.add_argument("--warmup-iters", type=int, default=32)
+    parser.add_argument("--warmup-iters", type=int, default=16)
 
     parser.add_argument("--eval-interval", type=int, default=200)
     parser.add_argument("--eval-iters", type=int, default=20)
@@ -81,7 +85,9 @@ def main() -> None:
 
     train_path, valid_path = resolve_packed_paths(args.packed_data_dir)
 
-    config = nemotronh_4b_finetune_config()
+    config = nemotronh_4b_peft_config()
+    hf_config = AutoConfig.from_pretrained(args.tokenizer, trust_remote_code=True)
+    config.model = AutoBridge.from_hf_config(hf_config).to_megatron_provider(load_weights=False)
 
     config.model.seq_length = args.seq_length
     config.model.context_parallel_size = args.context_parallel_size
@@ -94,7 +100,7 @@ def main() -> None:
     config.tokenizer.tokenizer_model = args.tokenizer
 
     config.dataset = FinetuningDatasetConfig(
-        dataset_root=None,
+        dataset_root=args.packed_data_dir,
         seq_length=args.seq_length,
         seed=5678,
         packed_sequence_specs=PackedSequenceSpecs(

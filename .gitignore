@@ -1,13 +1,36 @@
-# Python-generated files
+# Python caches and build artifacts
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Virtual environments
-.venv
+.venv/
+venv/
+env/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/progress.png
 
 # Agent prompt files (generated per-session by launchers)
 CLAUDE.md
@@ -19,9 +42,16 @@ worktrees/
 results/
 queue/
 
-# Results file
+# Local experiment results
 results.tsv
+*.log
 
-# Training artifacts
+# Local datasets, models, checkpoints, and experiment logs
 nemo_experiments/
 wandb/
+
+# Scripts
+scripts/
+
+# Notebooks
+notebooks/

@@ -42,11 +42,33 @@ torchrun --nproc-per-node=<N_GPUS> train.py \
     --pretrained-checkpoint <path-to-checkpoint> \
     --packed-data-dir <path-to-packed-data> \
     --seq-length 8192 \
-    --train-iters 2400 \
+    --train-iters 512 \
+    --warmup-iters 20 \
     --lr 5e-6
 ```
 
 The number of GPUs is a user-chosen hyperparameter.
+
+### Validate and smoke-test
+
+Run the offline checks without a GPU:
+
+```bash
+uv run python validate.py
+```
+
+The repository also includes a native smoke test and a reproducible Docker flow:
+
+```bash
+./scripts/smoke_test.sh
+
+./scripts/build_container.sh
+./scripts/run_train_test.sh
+```
+
+Models, datasets, converted checkpoints, logs, W&B files, and `results.tsv` are
+local experiment state. They belong under `nemo_experiments/` (or `wandb/`) and
+are intentionally excluded from Git.
 
 ## Running the agent
 
@@ -61,12 +83,21 @@ The agent will read `program.md`, set up a branch, and start experimenting auton
 ## Project structure
 
 ```
-prepare.py      -- fixed utilities: path resolution, validation (do not modify)
-train.py        -- SFT configuration via Megatron Bridge (agent modifies this)
-validate.py     -- offline validation tests (no GPU required)
-program.md      -- agent instructions
-pyproject.toml  -- dependencies
+.
+├── prepare.py       # fixed utilities; the agent must not modify this
+├── train.py         # SFT configuration modified by the agent
+├── validate.py      # offline validation (no GPU required)
+├── program.md       # autonomous research instructions
+├── scripts/         # checkpoint, data, container, and smoke-test utilities
+├── docker/          # Docker build support files
+├── notebooks/       # optional experiment analysis
+├── Dockerfile       # reproducible NVIDIA/Megatron Bridge environment
+├── pyproject.toml   # Python project and direct dependencies
+└── uv.lock          # reproducible dependency lock
 ```
+
+The root stays intentionally small to preserve the original autoresearch model:
+`prepare.py`, `train.py`, and `program.md` are the core workflow.
 
 ## Key differences from original autoresearch
 
@@ -87,13 +118,13 @@ pyproject.toml  -- dependencies
 | `--packed-data-dir` | `./nemo_experiments/data/stage1_sft_pt` | Directory with packed Parquet splits |
 | `--tokenizer` | `nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16` | HuggingFace tokenizer |
 | `--seq-length` | `8192` | Sequence length |
-| `--train-iters` | `2400` | Training iterations |
+| `--train-iters` | `512` | Training iterations |
 | `--global-batch-size` | `64` | Global batch size |
 | `--micro-batch-size` | `1` | Micro batch size (must be 1 for packed SFT) |
 | `--context-parallel-size` | `1` | Context parallelism degree |
 | `--lr` | `5e-6` | Learning rate |
 | `--min-lr` | `5e-7` | Minimum learning rate |
-| `--warmup-iters` | `50` | Warmup iterations |
+| `--warmup-iters` | `32` | Warmup iterations |
 | `--experiment-name` | `nemotron_3_nano_4b_sft_stage1_8k_pt` | Experiment name (wandb + checkpoint dir) |
 
 ## License

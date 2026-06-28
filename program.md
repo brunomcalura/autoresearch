@@ -44,7 +44,7 @@ The number of GPUs (`<N_GPUS>`) is chosen **exclusively by the user**. The agent
 - Change the number of GPUs (`--nproc-per-node`). This is set by the user and must not be modified by the agent.
 - Modify `prepare.py`. It is read-only. It contains the fixed path resolution and validation utilities.
 - Install new packages or add dependencies. You can only use what's already in `pyproject.toml`.
-- Change the model architecture (the Nemotron 3 Nano 4B recipe is fixed via `nemotronh_4b_finetune_config()`).
+- Change the model architecture (the Nemotron 3 Nano 4B provider loaded by `train.py` is fixed).
 
 **The goal is simple: get the best SFT quality.** You are optimizing the fine-tuning process -- learning rate schedules, batch sizes, training iterations, warmup strategies, etc. The model architecture itself is fixed (Nemotron 3 Nano 4B), but everything about how you train it is up for grabs.
 
