@@ -7,12 +7,13 @@ Usage:
     torchrun --nproc-per-node=<N_GPUS> train.py \
         --pretrained-checkpoint <path> \
         --packed-data-dir <path> \
-        [--seq-length 8192] [--train-iters 3600] [--lr 1.5e-6] ...
+        [--seq-length 8192] [--train-iters 512] [--lr 1.5e-6] ...
 """
 
 from __future__ import annotations
 
 import argparse
+import subprocess
 from pathlib import Path
 
 from megatron.bridge.data.datasets.packed_sequence import PackedSequenceSpecs
@@ -24,6 +25,18 @@ from megatron.bridge.training.finetune import finetune
 from megatron.bridge.training.gpt_step import forward_step
 
 from prepare import resolve_packed_paths, validate_config
+
+
+def _get_git_short_hash() -> str:
+    """Return the short git commit hash, or a timestamp fallback."""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+    except Exception:
+        from datetime import datetime
+        return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def parse_args() -> argparse.Namespace:
@@ -40,7 +53,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tokenizer", default="nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16")
     parser.add_argument("--seq-length", type=int, default=8192)
 
-    parser.add_argument("--train-iters", type=int, default=2400)
+    parser.add_argument("--train-iters", type=int, default=512)
     parser.add_argument("--global-batch-size", type=int, default=64)
     parser.add_argument("--micro-batch-size", type=int, default=1)
     parser.add_argument("--context-parallel-size", type=int, default=1)
@@ -48,7 +61,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--lr", type=float, default=5e-6)
     parser.add_argument("--min-lr", type=float, default=5e-7)
-    parser.add_argument("--warmup-iters", type=int, default=50)
+    parser.add_argument("--warmup-iters", type=int, default=32)
 
     parser.add_argument("--eval-interval", type=int, default=200)
     parser.add_argument("--eval-iters", type=int, default=20)
@@ -115,7 +128,8 @@ def main() -> None:
 
     config.logger.log_interval = 10
     config.logger.wandb_project = args.wandb_project
-    config.logger.wandb_exp_name = args.experiment_name
+    wandb_run_name = f"{args.experiment_name}_{_get_git_short_hash()}"
+    config.logger.wandb_exp_name = wandb_run_name
     config.logger.wandb_save_dir = args.wandb_save_dir
 
     print("Running packed-Parquet SFT v2 with:")
@@ -132,6 +146,7 @@ def main() -> None:
     print(f"  train_iters: {args.train_iters}")
     print(f"  checkpoint: {args.pretrained_checkpoint}")
     print(f"  save: {config.checkpoint.save}")
+    print(f"  wandb_run: {wandb_run_name}")
 
     finetune(config=config, forward_step_func=forward_step)
 

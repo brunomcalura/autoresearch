@@ -28,10 +28,14 @@ Each experiment uses `torchrun` for distributed training across the GPUs configu
 torchrun --nproc-per-node=<N_GPUS> train.py \
     --pretrained-checkpoint <path> \
     --packed-data-dir <path> \
-    [--seq-length 8192] [--train-iters 2400] [--lr 5e-6] ...
+    [--seq-length 8192] [--train-iters 512] [--lr 5e-6] ...
 ```
 
 The number of GPUs (`<N_GPUS>`) is a hyperparameter chosen by the user.
+
+**Iteration budget**: The goal of each run is to **validate code changes**, not to train to convergence. Keep the number of training iterations low — around **512 iterations** is the target. This is enough to confirm that the training loop runs correctly, losses decrease, and there are no crashes or regressions. Do not increase `--train-iters` significantly beyond this unless the user explicitly asks.
+
+**Warmup rule**: `--warmup-iters` should always be set to **2% – 5%** of `--train-iters`. For example, with 512 iterations, warmup should be between ~10 and ~26 iterations. This ensures a brief but sufficient learning rate ramp-up without wasting a large fraction of a short validation run on warmup.
 
 **What you CAN do:**
 - Modify `train.py` -- this is the only file you edit. Everything is fair game: hyperparameters (learning rate, batch size, warmup, decay), optimizer settings, scheduler, context parallelism, sequence length, evaluation intervals, etc.
@@ -51,7 +55,7 @@ The number of GPUs (`<N_GPUS>`) is a hyperparameter chosen by the user.
 
 ## Output format
 
-Megatron Bridge logs training progress to stdout/wandb. The key metrics to track:
+Megatron Bridge logs training progress to stdout/wandb. Each W&B run is automatically named `<experiment_name>_<git_short_hash>`, so every iteration of the loop gets a unique, traceable run in the W&B dashboard. The key metrics to track:
 
 - **Training loss** -- lower is better, monitor for convergence
 - **Validation loss** -- if validation data is present (`splits/valid/`)
