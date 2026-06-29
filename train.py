@@ -72,7 +72,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-interval", type=int, default=400)
 
     parser.add_argument("--experiment-name", default="nemotron_3_nano_4b_sft_stage1_8k_pt")
-    parser.add_argument("--save-dir", default="./nemo_experiments/checkpoints")
+    parser.add_argument(
+        "--save-dir",
+        default=None,
+        help="Directory to save checkpoints. Defaults to None (checkpoint saving disabled to prevent auto-resume).",
+    )
     parser.add_argument("--wandb-project", default="portuguese-nemotron-sft")
     parser.add_argument("--wandb-save-dir", default="./nemo_experiments/wandb")
     return parser.parse_args()
@@ -127,8 +131,13 @@ def main() -> None:
     config.validation.eval_iters = args.eval_iters
 
     config.checkpoint.pretrained_checkpoint = args.pretrained_checkpoint
-    config.checkpoint.save = f"{args.save_dir}/{args.experiment_name}"
-    config.checkpoint.save_interval = args.save_interval
+    if args.save_dir is not None:
+        config.checkpoint.save = f"{args.save_dir}/{args.experiment_name}"
+        # Ensure the checkpoint directory exists
+        Path(config.checkpoint.save).mkdir(parents=True, exist_ok=True)
+        config.checkpoint.save_interval = args.save_interval
+    else:
+        config.checkpoint.save = None
     if hasattr(config.checkpoint, "finetune"):
         config.checkpoint.finetune = True
 

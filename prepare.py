@@ -1,11 +1,11 @@
 """
 Fixed utilities for autoresearch SFT experiments.
-This file is READ-ONLY — the agent must NOT modify it.
+This file is READ-ONLY (except for checkpoint folder setup as requested by user).
 
 Contains:
 - Path resolution for packed Parquet SFT data
 - Configuration validation for Megatron Bridge constraints
-- Model download (run directly: ``python prepare.py``)
+- Model download and checkpoint folder preparation (run directly: ``python prepare.py``)
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from huggingface_hub import snapshot_download
 
 DEFAULT_REPO_ID = "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16"
 DEFAULT_LOCAL_DIR = Path("./nemo_experiments/pretrained/NVIDIA-Nemotron-3-Nano-4B-BF16")
+DEFAULT_CHECKPOINT_DIR = Path("./nemo_experiments/checkpoints/nemotron_3_nano_4b_sft_stage1_8k_pt")
 
 
 def has_parquet(path: Path) -> bool:
@@ -68,12 +69,12 @@ def validate_config(seq_length: int, micro_batch_size: int, context_parallel_siz
 
 
 # ---------------------------------------------------------------------------
-# CLI: download pretrained checkpoint
+# CLI: download pretrained checkpoint and setup checkpoint directory
 # ---------------------------------------------------------------------------
 
 def _download_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Download the pretrained Nemotron 3 Nano 4B checkpoint.",
+        description="Download pretrained checkpoint and prepare SFT checkpoint directory.",
     )
     parser.add_argument(
         "--repo-id",
@@ -86,18 +87,30 @@ def _download_args() -> argparse.Namespace:
         default=DEFAULT_LOCAL_DIR,
         help=f"Local directory to save the model (default: {DEFAULT_LOCAL_DIR})",
     )
+    parser.add_argument(
+        "--checkpoint-dir",
+        type=Path,
+        default=DEFAULT_CHECKPOINT_DIR,
+        help=f"Directory for saving train.py checkpoints (default: {DEFAULT_CHECKPOINT_DIR})",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = _download_args()
     local_dir: Path = args.local_dir
+    checkpoint_dir: Path = args.checkpoint_dir
 
+    # Create pre-trained weights parent dir
     local_dir.parent.mkdir(parents=True, exist_ok=True)
+
+    # Create SFT checkpoint dir
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Created SFT checkpoint directory at: {checkpoint_dir.resolve()}")
 
     print(f"Downloading {args.repo_id} → {local_dir.resolve()} ...")
     snapshot_download(repo_id=args.repo_id, local_dir=str(local_dir))
     print()
     print("Done! Use this path with train.py:")
     print(f"  --pretrained-checkpoint {local_dir}")
-
+    print(f"  --save-dir {checkpoint_dir.parent}")

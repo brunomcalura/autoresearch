@@ -62,7 +62,7 @@ torchrun --nproc-per-node=<N_GPUS> train.py \
 
 The number of GPUs is a user-chosen hyperparameter.
 
-### Validate and smoke-test
+### Validate and test
 
 Run the offline checks without a GPU:
 
@@ -70,16 +70,44 @@ Run the offline checks without a GPU:
 uv run python validate.py
 ```
 
-The repository also includes a native smoke test and a reproducible Docker flow:
+The repository also includes a reproducible Docker flow to build and test:
 
 ```bash
-./scripts/smoke_test.sh
-
 ./scripts/build_container.sh
 ./scripts/run_train_test.sh
 ```
 
+### Running inside Docker with Code Agents (Recommended for GPU environments)
+
+For systems with Docker and GPU support (such as a machine with an RTX 4090), you can build and run the entire environment inside a container. The Dockerfile includes Node.js and globally installs `@anthropic-ai/claude-code`, allowing you to run your AI agent directly inside the container.
+
+1. **Build the container image**:
+   ```bash
+   ./scripts/build_container.sh
+   ```
+
+2. **Start the interactive container**:
+   Launch an interactive terminal session inside the container with full GPU capabilities, proper memory configurations, and persistent folder mounts:
+   ```bash
+   ./scripts/run_interactive.sh
+   ```
+   *Note: This script automatically mounts your host's `~/.claude`, `~/.config`, and `~/.npm` directories to ensure that configurations, login states, and cache folders persist when the container exits. It also forwards `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and `WANDB_API_KEY` from your host.*
+
+3. **Authenticate Claude Code (first time only)**:
+   Once inside the container terminal, start the Claude Code agent:
+   ```bash
+   claude
+   ```
+   Log in to your Anthropic account when prompted. The session credentials will persist on your host machine.
+
+4. **Kickoff the Autoresearch loop**:
+   You can run tests or let the agent autonomously manage the SFT loop according to the rules in `program.md`. For a quick test inside the container:
+   ```bash
+   ./scripts/container_train_test.sh
+   ```
+
 Models, datasets, converted checkpoints, logs, W&B files, and `results.tsv` are
+
 local experiment state. They belong under `nemo_experiments/` (or `wandb/`) and
 are intentionally excluded from Git.
 

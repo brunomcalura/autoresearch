@@ -8,6 +8,15 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /workspace
 
+# Install Node.js and NPM for code agents (like Claude Code)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && npm install -g @anthropic-ai/claude-code \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+
 # Keep NVIDIA's CUDA/PyTorch/Transformer Engine binaries visible in an
 # isolated environment, while installing the Megatron Bridge 0.5 runtime.
 # Installing megatron-core's "dev" extra is intentionally avoided because it

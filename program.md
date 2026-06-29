@@ -40,9 +40,13 @@ The number of GPUs (`<N_GPUS>`) is chosen **exclusively by the user**. The agent
 **What you CAN do:**
 - Modify `train.py` -- this is the only file you edit. Everything is fair game: hyperparameters (learning rate, batch size, warmup, decay), optimizer settings, scheduler, context parallelism, sequence length, evaluation intervals, etc.
 
+**Checkpoint Constraints:**
+- **Disabled by Default**: To ensure that SFT training always starts from scratch with the pre-trained weights (and to prevent automatically resuming from a previously saved SFT checkpoint), checkpoint saving is disabled by default (`--save-dir` defaults to `None`).
+- **Directory Separation & Naming**: If checkpoint saving is explicitly enabled (by passing `--save-dir <path>` to `train.py`), the fine-tuned SFT checkpoints must **never** be saved in the same folder as the pre-trained model weights (e.g. `--pretrained-checkpoint`). Additionally, they must use the exact same folder name/path across different runs so that they overwrite the previous run, avoiding storing multiple different checkpoints and wasting disk space.
+
 **What you CANNOT do:**
 - Change the number of GPUs (`--nproc-per-node`). This is set by the user and must not be modified by the agent.
-- Modify `prepare.py`. It is read-only. It contains the fixed path resolution and validation utilities.
+- Modify `prepare.py` (except for initial environment prep changes explicitly requested by the user). It contains the fixed path resolution and validation utilities.
 - Install new packages or add dependencies. You can only use what's already in `pyproject.toml`.
 - Change the model architecture (the Nemotron 3 Nano 4B provider loaded by `train.py` is fixed).
 
